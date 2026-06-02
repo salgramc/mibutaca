@@ -1,10 +1,16 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Stadium from "./pages/Stadium";
+
 function App() {
   return (
-    <div>
-      <h1>MiButaca</h1>
-      <p>Fotos reales desde tu asiento.</p>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/:stadiumSlug" element={<Stadium />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
