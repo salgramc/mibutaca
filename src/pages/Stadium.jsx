@@ -1,18 +1,10 @@
 import { useParams, Link } from "react-router-dom";
+import { sections } from "../data/sections";
 
 function Stadium() {
   const { stadiumSlug } = useParams();
 
-  const sections = [
-    "101",
-    "102",
-    "103",
-    "104",
-    "105",
-    "201",
-    "202",
-    "203",
-  ];
+  const stadiumSections = sections[stadiumSlug] || [];
 
   const stadiumName = stadiumSlug
     .split("-")
@@ -68,7 +60,7 @@ function Stadium() {
 
           <div>
             <span className="font-bold text-black">
-              {sections.length}
+              {stadiumSections.length}
             </span>{" "}
             secciones
           </div>
@@ -80,7 +72,7 @@ function Stadium() {
         </h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sections.map((section) => (
+          {stadiumSections.map((section) => (
             <Link
               key={section}
               to={`/${stadiumSlug}/${section}`}
