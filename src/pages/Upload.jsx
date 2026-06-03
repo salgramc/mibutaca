@@ -2,10 +2,98 @@ import { useState } from "react";
 import { stadiums } from "../data/stadiums";
 import { sections } from "../data/sections";
 import { teams } from "../data/teams";
+import { supabase } from "../lib/supabase";
 
 function Upload() {
   const [selectedStadium, setSelectedStadium] =
     useState("");
+
+  const [selectedSection, setSelectedSection] =
+    useState("");
+
+  const [row, setRow] = useState("");
+  const [seat, setSeat] = useState("");
+  const [homeTeam, setHomeTeam] = useState("");
+  const [awayTeam, setAwayTeam] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const [photo, setPhoto] = useState(null);
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  async function handleUpload() {
+    if (!photo) {
+      alert("Selecciona una foto");
+      return;
+    }
+
+    if (!selectedStadium || !selectedSection) {
+      alert("Selecciona estadio y sección");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt =
+        photo.name.split(".").pop();
+
+      const fileName =
+        `${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("seat-photos")
+          .upload(fileName, photo);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from("seat-photos")
+        .getPublicUrl(fileName);
+
+      const publicUrl = data.publicUrl;
+
+      const { error: insertError } =
+        await supabase
+          .from("photos")
+          .insert([
+            {
+              stadium_slug: selectedStadium,
+              section: selectedSection,
+              row: row,
+              seat: seat,
+              home_team: homeTeam,
+              away_team: awayTeam,
+              notes: notes,
+              image_url: publicUrl,
+            },
+          ]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      alert("Foto subida correctamente");
+
+      setSelectedStadium("");
+      setSelectedSection("");
+      setRow("");
+      setSeat("");
+      setHomeTeam("");
+      setAwayTeam("");
+      setNotes("");
+      setPhoto(null);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
+
+    setUploading(false);
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -15,6 +103,7 @@ function Upload() {
         </h1>
 
         <div className="space-y-4">
+
           {/* Stadium */}
           <select
             value={selectedStadium}
@@ -39,9 +128,13 @@ function Upload() {
 
           {/* Section */}
           <select
+            value={selectedSection}
+            onChange={(e) =>
+              setSelectedSection(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
           >
-            <option>
+            <option value="">
               Selecciona una sección
             </option>
 
@@ -61,6 +154,10 @@ function Upload() {
           <input
             type="text"
             placeholder="Fila"
+            value={row}
+            onChange={(e) =>
+              setRow(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
           />
 
@@ -68,14 +165,22 @@ function Upload() {
           <input
             type="text"
             placeholder="Asiento"
+            value={seat}
+            onChange={(e) =>
+              setSeat(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
           />
 
           {/* Home Team */}
           <select
+            value={homeTeam}
+            onChange={(e) =>
+              setHomeTeam(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
           >
-            <option>
+            <option value="">
               Equipo Local
             </option>
 
@@ -91,9 +196,13 @@ function Upload() {
 
           {/* Away Team */}
           <select
+            value={awayTeam}
+            onChange={(e) =>
+              setAwayTeam(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
           >
-            <option>
+            <option value="">
               Equipo Visitante
             </option>
 
@@ -107,82 +216,13 @@ function Upload() {
             ))}
           </select>
 
-          {/* Seat Details */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-bold mb-3">
-              Detalles del asiento
-            </h3>
-
-            <div className="space-y-2">
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Puede estar en sombra
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Vista obstruida
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Espacio extra para piernas
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Cerca del túnel local
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Cerca del túnel visitante
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                En pasillo
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Bajo techo
-              </label>
-
-              <label className="block">
-                <input
-                  type="checkbox"
-                  className="mr-2"
-                />
-                Asiento Club
-              </label>
-            </div>
-          </div>
-
           {/* Notes */}
           <textarea
             placeholder="Notas"
+            value={notes}
+            onChange={(e) =>
+              setNotes(e.target.value)
+            }
             className="w-full p-3 border rounded-lg"
             rows="4"
           />
@@ -190,14 +230,22 @@ function Upload() {
           {/* Photo */}
           <input
             type="file"
+            accept="image/*"
+            onChange={(e) =>
+              setPhoto(e.target.files[0])
+            }
             className="w-full"
           />
 
           {/* Submit */}
           <button
-            className="w-full bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700"
+            onClick={handleUpload}
+            disabled={uploading}
+            className="w-full bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
           >
-            Publicar Foto
+            {uploading
+              ? "Subiendo..."
+              : "Publicar Foto"}
           </button>
         </div>
       </div>
